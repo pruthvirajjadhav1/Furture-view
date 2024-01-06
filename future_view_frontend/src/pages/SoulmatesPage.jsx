@@ -2,6 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bars } from "react-loader-spinner";
 import { useAppContext } from "../main";
+import { ToastContainer, toast } from 'react-toastify';
+
+const handleShare = () => {
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => {
+      alert("URL copied to clipboard!");
+    })
+    .catch(() => {
+      alert("Failed to copy URL");
+    });
+};
 const SoulmatesPage = () => {
   const { selectedZodiacSign, selectedZodiacSign2, selectedZodiacSign3 } = useAppContext();
   const [soulmatesData, setSoulmatesData] = useState([]);
@@ -12,6 +23,13 @@ const SoulmatesPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const params = new URLSearchParams(window.location.search);
+      const sign = params.get('sign');
+      if (!sign) {
+        throw new Error("Please select a zodiac sign!");
+      }
+      let [selectedZodiacSign, selectedZodiacSign2, selectedZodiacSign3] = sign.split(',');
+
         if (!selectedZodiacSign || !selectedZodiacSign2 || !selectedZodiacSign3) {
           throw new Error("Please select a zodiac sign!");
         }
@@ -41,7 +59,7 @@ const SoulmatesPage = () => {
     };
 
     fetchData();
-  }, [selectedZodiacSign]);
+  }, [selectedZodiacSign, selectedZodiacSign2, selectedZodiacSign3]);
 
   if (loading) {
     return (
@@ -67,6 +85,11 @@ const SoulmatesPage = () => {
 
   return (
     <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4">
+    <button onClick={handleShare}>Share</button>
+    <ToastContainer />
+    {/* ...rest of your component... */}
+  </div>
       <table className="min-w-full bg-white border border-gray-300">
         <thead>
           <tr className="bg-gray-200">

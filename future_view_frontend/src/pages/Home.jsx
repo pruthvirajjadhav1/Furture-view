@@ -2,28 +2,18 @@ import React, { useEffect } from "react";
 
 import GetData from "./GetData";
 import Soulmates from "../components/Soulmates";
+import Birthdates from "../components/Birthdates";
+import Next60 from "../components/Next60";
+import Name from "../components/Name";
 
 const Home = () => {
   useEffect(() => {}, []);
   return (
-    <div className="flex flex-col gap-4">
+    <div >
       <Soulmates />
-
-      <GetData
-        title="2. Predicts Your 60 months of Luck and Love"
-        page="/soulmate-name"
-        button="predicts Luck"
-      />
-      <GetData
-        title="3. Find Your Soulmates' Birthdates"
-        page="/soulmate-birthday"
-        button="Get birthdates"
-      />
-      <GetData
-        title="4. Predicts Kpop Idols' Luck and Love Today"
-        page="/soulmate-name"
-        button="Luck and Love"
-      />
+      <Next60 />
+      <Birthdates />
+      <Name />
     </div>
   );
 };

@@ -1,72 +1,153 @@
 import React, { useEffect, useState } from "react";
-import { useAppContext } from "../main";
 import { useNavigate } from "react-router-dom";
+import { Bars } from "react-loader-spinner";
+import { useAppContext } from "../main";
+import { ToastContainer, toast } from 'react-toastify';
 
-function formatDate(inputDate) {
-  const parsedDate = new Date(inputDate);
+const handleShare = () => {
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => {
+      alert("URL copied to clipboard!");
+    })
+    .catch(() => {
+      alert("Failed to copy URL");
+    });
+};
 
-  if (isNaN(parsedDate.getTime())) {
-    // Invalid date format
-    return "Invalid Date";
-  }
-
-  const month = parsedDate.getMonth() + 1;
-  const day = parsedDate.getDate();
-  const year = parsedDate.getFullYear();
-
-  return `${month}/${day}/${year}`;
-}
-
-const SoulmateName = () => {
-  const { dob, fullname, updateDob, updateFullname } = useAppContext();
-  const [soulmateData, setSoulmateData] = useState({ fullname: "", kname: "" });
+const SoulmatesName = () => {
+  const { selectedname1, selectedname2, selectedname3, selectedfirst, selectedfull } = useAppContext();
+  const [soulmatesData, setSoulmatesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!dob) {
-      alert("Please fill in your details!");
-      navigate("/");
-    }
-
-    const fetchSoulmateData = async () => {
+    const fetchData = async () => {
       try {
-        const formattedDate = formatDate(dob);
+        const params = new URLSearchParams(window.location.search);
+      const sign = params.get('sign');
+      if (!sign) {
+        throw new Error("Please select a zodiac sign!");
+      }
+      let [selectedname1, selectedname2, selectedname3, name, preparedSelectedFull] = sign.split(',');
+
+      if (!selectedname1 || !selectedname2 || !selectedname3) {
+        throw new Error("Please select a zodiac sign!");
+      }
+         name = selectedfirst.toLowerCase().trim();
+         preparedSelectedFull = encodeURIComponent(selectedfull.toLowerCase().trim());
+        // Make a GET request to the specified URL
         const apiUrl = `${
           import.meta.env.VITE_BACKEND_PORT
-        }/api/soulmate?dob=${formattedDate}`;
-        const response = await fetch(apiUrl);
+        }/api/today?zodiac=${selectedname1},${selectedname2},${selectedname3},${name},${preparedSelectedFull}`;
 
-        if (response.ok) {
-          const data = await response.json();
-          setSoulmateData(data);
-        } else if (response.status === 404) {
-          // Handle the case when soulmate data is not found
-          console.error("Soulmate not found");
-          setSoulmateData({ fullname: "Soulmate not found", kname: "" });
-        } else {
-          console.error(`Error fetching data: ${response.statusText}`);
-          setSoulmateData({ fullname: "Error fetching data", kname: "" });
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data. Status: ${response.status}`);
         }
+          
+        const data = await response.json();
+        // Handle the data received from the API
+        console.log("Soulmates API response:", data);
+        setSoulmatesData(data);
       } catch (error) {
-        console.error("Error fetching data:", error.message);
-        setSoulmateData({ fullname: "Error fetching data", kname: "" });
+        // Handle errors
+        console.error("Idols not found:", error.message);
+        setError(error.message);
+      } finally {
+        // Set loading to false after fetching is complete
+        setLoading(false);
       }
     };
 
-    if (dob) {
-      fetchSoulmateData();
-    }
-  }, [dob, navigate]);
+    fetchData();
+  }, [selectedname1, selectedname2, selectedname3]);
+
+  if (loading) {
+    return (
+      <div>
+        <Bars
+          height="80"
+          width="80"
+          color="#1F2937"
+          ariaLabel="bars-loading"
+          wrapperStyle={{}}
+          wrapperClass=""
+          visible={true}
+        />
+      </div>
+    ); // You can replace this with a loader component
+  }
+
+  if (error) {
+    alert(`Error: ${error}`);
+    navigate("/");
+    return null;
+  }
 
   return (
-    <div className="max-w-2xl p-8 bg-gradient-to-r from-purple-400 to-blue-500 rounded-lg shadow-md text-white">
-      <div className="text-center">
-        <h2 className="text-4xl font-bold mb-4">Your K-Pop Soulmate</h2>
-        <p className="text-5xl font-bold mb-6 ">{soulmateData.fullname}</p>
-        <p className="text-2xl font-medium">{soulmateData.kname}</p>
-      </div>
+    <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4">
+    <button onClick={handleShare}>Share</button>
+    <ToastContainer />
+    {/* ...rest of your component... */}
+  </div>
+      <table className="min-w-full bg-white border border-gray-300">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Name
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Full Name
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Korean Full Name
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Korean Name
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              DOB
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Other
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Country
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              year's luck
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              month's luck
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              day's luck
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Overall luck
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {soulmatesData.map((rowData, rowIndex) => (
+            <tr key={rowIndex}>
+              {rowData.map((cellData, colIndex) => (
+                <td
+                  key={colIndex}
+                  className="py-2 px-4 border-b border-gray-300 text-left text-gray-800"
+                >
+                  {cellData}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
     </div>
   );
 };
 
-export default SoulmateName;
+export default SoulmatesName;

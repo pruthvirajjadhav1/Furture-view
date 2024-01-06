@@ -1,59 +1,187 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../main";
+import { useNavigate } from "react-router-dom";
+import { Bars } from "react-loader-spinner";
+import { ToastContainer, toast } from 'react-toastify';
 
-const formatDate = (inputDate) => {
-  const parsedDate = new Date(inputDate);
-
-  if (isNaN(parsedDate.getTime())) {
-    // Invalid date format
-    return "Invalid Date";
-  }
-
-  const month = parsedDate.getMonth() + 1;
-  const day = parsedDate.getDate();
-  const year = parsedDate.getFullYear();
-
-  return `${month}/${day}/${year}`;
+const handleShare = () => {
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => {
+      alert("URL copied to clipboard!");
+    })
+    .catch(() => {
+      alert("Failed to copy URL");
+    });
 };
 
 const SoulmateBirthday = () => {
-  const { dob, updateDob } = useAppContext();
-  const [birthdateData, setBirthdateData] = useState({ fullname: "", dob: "" });
+  const { selectedZodiacSignbirth1, selectedZodiacSignbirth2 } = useAppContext();
+  const [soulmatesData, setSoulmatesData] = useState([]);
+  const [soulmatesData2, setSoulmatesData2] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  
 
   useEffect(() => {
-    const fetchBirthdateData = async () => {
+    const fetchData = async () => {
       try {
-        const apiUrl = `http://localhost:3000/api/birthday?dob=${formatDate(
-          dob
-        )}`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        console.log(response);
-
-        if (response.status === 404) {
-          setBirthdateData({ fullname: "Birthday not found!", dob: "" });
-        } else {
-          setBirthdateData(data);
+        const params = new URLSearchParams(window.location.search);
+      const sign = params.get('sign');
+      if (!sign) {
+        throw new Error("Please select a zodiac sign!");
+      }
+      let [selectedZodiacSignbirth1, selectedZodiacSignbirth2] = sign.split(',');
+        if (!selectedZodiacSignbirth1 || !selectedZodiacSignbirth2) {
+          throw new Error("Please select a zodiac sign!");
         }
+
+        // Make a GET request to the specified URL
+        const apiUrl2 = `${
+          import.meta.env.VITE_BACKEND_PORT
+        }/api/birthdays2?zodiac=${selectedZodiacSignbirth1},${selectedZodiacSignbirth2}`;
+
+        const response2 = await fetch(apiUrl2);
+        if (!response2.ok) {
+          throw new Error(`Failed to fetch data. Status: ${response2.status}`);
+        }
+          
+        const data2 = await response2.json();
+        // Handle the data received from the API
+        console.log("Soulmates API response:", data2);
+        setSoulmatesData2(data2);
+
+
+
+        const apiUrl = `${
+          import.meta.env.VITE_BACKEND_PORT
+        }/api/birthdays?zodiac=${selectedZodiacSignbirth1},${selectedZodiacSignbirth2}`;
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data. Status: ${response.status}`);
+        }
+          
+        const data = await response.json();
+        // Handle the data received from the API
+        console.log("Soulmates API response:", data);
+        setSoulmatesData(data);
       } catch (error) {
-        console.error("Error fetching data:", error.message);
+        // Handle errors
+        console.error("Error fetching soulmates data:", error.message);
+        setError(error.message);
+      } finally {
+        // Set loading to false after fetching is complete
+        setLoading(false);
       }
     };
 
-    if (dob) {
-      fetchBirthdateData();
-    }
-  }, [dob]);
+    fetchData();
+  }, [selectedZodiacSignbirth1, selectedZodiacSignbirth2]);
+
+  if (loading) {
+    return (
+      <div>
+        <Bars
+          height="80"
+          width="80"
+          color="#1F2937"
+          ariaLabel="bars-loading"
+          wrapperStyle={{}}
+          wrapperClass=""
+          visible={true}
+        />
+      </div>
+    ); // You can replace this with a loader component
+  }
+
+  if (error) {
+    alert(`Error: ${error}`);
+    navigate("/");
+    return null;
+  }
 
   return (
-    <div className="max-w-2xl p-8 bg-gradient-to-r from-teal-400 to-blue-500 rounded-lg shadow-md text-white">
-      <div className="text-center">
-        <h2 className="text-4xl font-bold mb-4">
-          Your K-Pop Soulmate's Birthdate
-        </h2>
-        <p className="text-5xl font-bold mb-6 ">{birthdateData.dob}</p>
-        <p className="text-2xl font-medium">{birthdateData.fullname}</p>
-      </div>
+    <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4">
+    <button onClick={handleShare}>Share</button>
+    <ToastContainer />
+    {/* ...rest of your component... */}
+  </div>
+     <table className="w-full bg-white border border-gray-300">
+     
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Soulmate zodiac
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              years
+            </th>
+          </tr>
+
+          {/* <tr className="bg-gray-200">
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Soulmate zodiac
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              months
+            </th>
+          </tr> */}
+
+        </thead>
+        <tbody>
+          {soulmatesData.map((rowData, rowIndex) => (
+            <tr key={rowIndex}>
+              {rowData.map((cellData, colIndex) => (
+                <td
+                  key={colIndex}
+                  className="py-2 px-4 border-b border-gray-300 text-left text-gray-800"
+                >
+                  {cellData}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <table className="w-full bg-white border border-gray-300">
+     
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Soulmate zodiac
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              months
+            </th>
+          </tr>
+
+          {/* <tr className="bg-gray-200">
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              Soulmate zodiac
+            </th>
+            <th className="py-2 px-4 border-b border-gray-300 font-semibold text-left text-gray-800">
+              months
+            </th>
+          </tr> */}
+
+        </thead>
+        <tbody>
+          {soulmatesData2.map((rowData, rowIndex) => (
+            <tr key={rowIndex}>
+              {rowData.map((cellData, colIndex) => (
+                <td
+                  key={colIndex}
+                  className="py-2 px-4 border-b border-gray-300 text-left text-gray-800"
+                >
+                  {cellData}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
